@@ -18,6 +18,7 @@ let separation = 0, targetSeparation = 0;
 let impulse = 0, time = 0, isDragging = false, lastPointer = null;
 let toastTimer;
 let cameraStream = null, handLandmarker = null, trackingFrame = 0, cameraStarted = false;
+let cameraStartId = 0, cameraStartPending = false, trackerLoading = false, lastVideoTime = -1;
 let previousGesture = '', gestureCooldown = 0, previousHandsDistance = null;
 let sensitivityForgiving = false;
 const random = (seed) => { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); };
@@ -373,62 +374,147 @@ function updateHandTracking(result) {
 }
 
 async function startCamera() {
-  if (cameraStarted) { showToast('Camera tracking is already active.'); return; }
-  if (!navigator.mediaDevices?.getUserMedia) { cameraFallback('This browser does not offer camera access here.'); return; }
-  $('#camera-top-button').disabled = true; $('#camera-top-button').querySelector('span:last-child').textContent = 'Starting…';
+  if (cameraStartPending) { showToast('The camera permission request is already in progress.'); return; }
+  if (cameraStarted) {
+    if (handLandmarker) showToast('Camera and hand tracking are already active.');
+    else if (trackerLoading) showToast('Camera is live; on-device hand tracking is still loading.');
+    else { showToast('Camera is live. Retrying on-device hand tracking…'); void startHandTracking(cameraStartId); }
+    return;
+  }
+  if (!window.isSecureContext) { cameraFallback('Camera access requires a secure HTTPS page (or localhost).'); return; }
+  if (!navigator.mediaDevices?.getUserMedia) { cameraFallback('This browser does not offer camera access. Try a current browser over HTTPS.'); return; }
+  cameraStartPending = true;
+  const requestId = ++cameraStartId;
+  setCameraButtonState();
   try {
-    cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
-    const video = $('#camera-video'); video.srcObject = cameraStream; await video.play();
-    $('#camera-preview').hidden = false;
-    $('#scene-status').textContent = 'Camera ready'; $('#mode-status').textContent = 'Camera · on-device';
-    $('#hand-status').textContent = 'Loading tracker';
-    showToast('Camera is on this device only. Loading the local hand tracker…');
-    const vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22');
-    const fileset = await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/wasm');
-    const modelAssetPath = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
-    const options = { runningMode: 'VIDEO', numHands: 2, minHandDetectionConfidence: .55, minHandPresenceConfidence: .5, minTrackingConfidence: .48 };
-    try {
-      handLandmarker = await vision.HandLandmarker.createFromOptions(fileset, { ...options, baseOptions: { modelAssetPath, delegate: 'GPU' } });
-    } catch (gpuError) {
-      console.info('GPU hand tracking unavailable; retrying with on-device CPU inference.', gpuError);
-      handLandmarker = await vision.HandLandmarker.createFromOptions(fileset, { ...options, baseOptions: { modelAssetPath, delegate: 'CPU' } });
-    }
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'user' }, width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
+    if (requestId !== cameraStartId) { stream.getTracks().forEach((track) => track.stop()); return; }
+    cameraStream = stream;
     cameraStarted = true;
-    $('#scene-status').textContent = 'Tracking'; $('#mode-status').textContent = 'Camera · on-device';
-    $('#camera-top-button').querySelector('span:last-child').textContent = 'Camera live';
+    cameraStartPending = false;
+    lastVideoTime = -1;
+    const video = $('#camera-video');
+    video.muted = true; video.autoplay = true; video.playsInline = true; video.srcObject = stream;
+    $('#camera-preview').hidden = false;
+    $('#camera-play').hidden = true;
+    $('#scene-status').textContent = 'Camera live'; $('#mode-status').textContent = 'Camera · on-device';
+    $('#hand-status').textContent = 'Loading tracker';
     $('#scene-indicator').classList.add('live');
-    showToast('Hand tracking is live. Video stays in this browser tab.');
-    trackingFrame = requestAnimationFrame(trackHands);
+    setCameraButtonState();
+    showToast('Camera is live on this device. Loading hand tracking…');
+    for (const track of stream.getVideoTracks()) track.addEventListener('ended', () => {
+      if (requestId === cameraStartId) cameraFallback('The camera stream ended. Check camera permission and try again.');
+    }, { once: true });
+    video.play().then(() => { $('#camera-play').hidden = true; }).catch((error) => {
+      if (requestId !== cameraStartId || !cameraStarted) return;
+      console.info('Inline video playback needs a user gesture; the camera stream remains active.', error);
+      $('#camera-play').hidden = false;
+      showToast('Camera connected. Tap “Start video” if the preview stays dark.');
+    });
+    void startHandTracking(requestId);
   } catch (error) {
-    console.warn('On-device camera setup was unavailable:', error);
-    cameraFallback(error?.name === 'NotAllowedError' ? 'Camera permission was declined. Continue with manual controls.' : 'Hand tracking could not start. Continue with manual controls.');
+    if (requestId === cameraStartId) cameraFallback(cameraErrorMessage(error));
+  } finally {
+    if (requestId === cameraStartId) {
+      cameraStartPending = false;
+      setCameraButtonState();
+      $('#start-camera').disabled = false;
+    }
   }
 }
+
+function cameraErrorMessage(error) {
+  if (!window.isSecureContext) return 'Camera access requires a secure HTTPS page (or localhost).';
+  if (error?.name === 'NotAllowedError' || error?.name === 'SecurityError' || error?.name === 'PermissionDeniedError') return 'Camera permission is blocked. Allow camera access for this site, then try again.';
+  if (error?.name === 'NotFoundError' || error?.name === 'OverconstrainedError') return 'No compatible camera was found. Check that a camera is available and try again.';
+  if (error?.name === 'NotReadableError' || error?.name === 'AbortError') return 'The camera is busy or unavailable. Close other apps using it, then try again.';
+  return 'The camera could not start. Check browser permission and try again.';
+}
+
+function setCameraButtonState() {
+  const button = $('#camera-top-button');
+  button.disabled = cameraStartPending;
+  button.querySelector('span:last-child').textContent = cameraStartPending ? 'Starting…' : cameraStarted ? 'Camera live' : 'Use camera';
+}
+
+async function startHandTracking(requestId) {
+  if (!cameraStarted || !cameraStream || requestId !== cameraStartId || trackerLoading || handLandmarker) return;
+  trackerLoading = true;
+  $('#hand-status').textContent = 'Loading tracker';
+  try {
+    const vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.2.2/vision_bundle.mjs');
+    if (requestId !== cameraStartId || !cameraStarted) return;
+    const fileset = await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.2.2/wasm');
+    if (requestId !== cameraStartId || !cameraStarted) return;
+    const modelAssetPath = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
+    const options = { runningMode: 'VIDEO', numHands: 2, minHandDetectionConfidence: .55, minHandPresenceConfidence: .5, minTrackingConfidence: .48 };
+    let landmarker;
+    try {
+      landmarker = await vision.HandLandmarker.createFromOptions(fileset, { ...options, baseOptions: { modelAssetPath, delegate: 'GPU' } });
+    } catch (gpuError) {
+      console.info('GPU hand tracking unavailable; retrying with on-device CPU inference.', gpuError);
+      if (requestId !== cameraStartId || !cameraStarted) return;
+      landmarker = await vision.HandLandmarker.createFromOptions(fileset, { ...options, baseOptions: { modelAssetPath, delegate: 'CPU' } });
+    }
+    if (requestId !== cameraStartId || !cameraStarted) { landmarker.close(); return; }
+    handLandmarker = landmarker;
+    $('#scene-status').textContent = 'Tracking'; $('#mode-status').textContent = 'Camera · on-device';
+    $('#scene-indicator').classList.add('live');
+    $('#hand-status').textContent = 'No hand';
+    showToast('Hand tracking is live on this device. Video stays in this browser tab.');
+    trackingFrame = requestAnimationFrame(trackHands);
+  } catch (error) {
+    if (requestId !== cameraStartId || !cameraStarted) return;
+    console.warn('On-device hand tracking could not initialize; camera preview remains active:', error);
+    $('#scene-status').textContent = 'Camera live';
+    $('#hand-status').textContent = 'Tracker unavailable';
+    $('#hand-indicator').classList.remove('live');
+    showToast('Camera is live. Hand tracking could not load; tap “Camera live” to retry. Manual controls still work.');
+  } finally {
+    if (requestId === cameraStartId) trackerLoading = false;
+  }
+}
+
 function trackHands() {
-  if (!cameraStarted || !handLandmarker) return;
+  if (!cameraStarted || !cameraStream || !handLandmarker) return;
   const video = $('#camera-video');
-  if (video.readyState >= 2) {
+  if (video.readyState >= 2 && !video.paused && video.currentTime !== lastVideoTime) {
+    lastVideoTime = video.currentTime;
     const result = handLandmarker.detectForVideo(video, performance.now());
     updateHandTracking(result);
   }
   trackingFrame = requestAnimationFrame(trackHands);
 }
+
 function cameraFallback(message) {
+  cameraStartId++;
+  cameraStartPending = false;
+  trackerLoading = false;
   cameraStarted = false;
   if (cameraStream) { cameraStream.getTracks().forEach((track) => track.stop()); cameraStream = null; }
   if (handLandmarker) { handLandmarker.close(); handLandmarker = null; }
   cancelAnimationFrame(trackingFrame);
-  $('#camera-preview').hidden = true; $('#camera-top-button').disabled = false;
-  $('#camera-top-button').querySelector('span:last-child').textContent = 'Use camera';
+  const video = $('#camera-video'); video.pause(); video.srcObject = null;
+  $('#camera-preview').hidden = true; $('#camera-play').hidden = true;
+  setCameraButtonState(); $('#start-camera').disabled = false;
   $('#scene-status').textContent = 'Idle · manual'; $('#hand-status').textContent = 'No hand';
   $('#mode-status').textContent = 'Manual'; $('#scene-indicator').classList.remove('live'); $('#hand-indicator').classList.remove('live');
-  setOpenness(0); showToast(message);
+  setOpenness(0); if (message) showToast(message);
 }
+
 $('#start-camera').addEventListener('click', startCamera);
 $('#camera-top-button').addEventListener('click', startCamera);
+$('#camera-play').addEventListener('click', async () => {
+  try { await $('#camera-video').play(); $('#camera-play').hidden = true; }
+  catch (error) { console.warn('Inline camera video could not start:', error); showToast('Video playback is still blocked. Check this site’s camera permission.'); }
+});
 $('#camera-close').addEventListener('click', () => { cameraFallback('Camera off. Your model is ready for manual exploration.'); });
-$('#continue-manual').addEventListener('click', () => { if (cameraStarted) cameraFallback('Camera off. Continuing in manual mode.'); else showToast('Manual mode ready — drag to rotate, scroll to zoom.'); $('#mode-status').textContent = 'Manual'; });
-window.addEventListener('beforeunload', () => { if (cameraStream) cameraStream.getTracks().forEach((track) => track.stop()); });
+$('#continue-manual').addEventListener('click', () => {
+  if (cameraStarted || cameraStartPending) cameraFallback('Camera stopped. Continuing in manual mode.');
+  else showToast('Manual mode ready — drag to rotate, scroll to zoom.');
+  $('#mode-status').textContent = 'Manual';
+});
+window.addEventListener('pagehide', () => { if (cameraStream || cameraStartPending) cameraFallback(''); });
 window.addEventListener('resize', resize);
 
 resize(); updateModel(); requestAnimationFrame(render);

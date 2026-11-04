@@ -108,7 +108,9 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--signal); outlin
 .camera-preview video { display: block; width: 100%; aspect-ratio: 4/3; object-fit: cover; transform: scaleX(-1); }
 .camera-live { position: absolute; bottom: 8px; left: 8px; display: flex; align-items: center; gap: 5px; color: #edf2e8; font: 7px var(--mono); letter-spacing: .09em; }
 .camera-live i { width: 5px; height: 5px; border-radius: 50%; background: var(--signal); box-shadow: 0 0 8px var(--signal); }
-.camera-preview button { position: absolute; top: 5px; right: 6px; width: 21px; height: 21px; border: 1px solid #ffffff55; border-radius: 50%; color: white; background: #06100eaa; cursor: pointer; font-size: 16px; line-height: 1; }
+.camera-preview button:not(.camera-play) { position: absolute; top: 5px; right: 6px; width: 21px; height: 21px; border: 1px solid #ffffff55; border-radius: 50%; color: white; background: #06100eaa; cursor: pointer; font-size: 16px; line-height: 1; }
+.camera-preview .camera-play { position: absolute; top: 50%; left: 50%; padding: 7px 9px; border: 1px solid rgba(199,243,107,.6); border-radius: 3px; color: #f2f4ec; background: rgba(8,17,14,.94); cursor: pointer; font: 8px var(--mono); transform: translate(-50%, -50%); }
+.camera-preview .camera-play[hidden] { display: none; }
 .feature-note { position: absolute; z-index: 2; top: 43%; right: 14.5%; display: flex; align-items: center; gap: 12px; max-width: 220px; pointer-events: none; }
 .feature-note[hidden] { display: none; }
 .feature-leader { width: 42px; height: 1px; background: linear-gradient(90deg, transparent, var(--signal)); }

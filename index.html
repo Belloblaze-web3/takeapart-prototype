@@ -74,8 +74,9 @@
           </aside>
 
           <div class="camera-preview" id="camera-preview" hidden>
-            <video id="camera-video" playsinline muted></video>
+            <video id="camera-video" playsinline muted autoplay></video>
             <span class="camera-live"><i></i> ON-DEVICE</span>
+            <button id="camera-play" class="camera-play" type="button" hidden>Start video</button>
             <button id="camera-close" type="button" aria-label="Turn off camera">×</button>
           </div>
 
@@ -109,7 +110,7 @@
               <div class="welcome-actions">
                 <button class="button button-primary" type="button" id="start-camera"><span class="button-icon">◉</span> Start with camera <span class="button-arrow">↗</span></button>
                 <button class="button button-quiet" type="button" id="continue-manual">Continue without camera <span class="button-arrow">→</span></button>
-                <p class="privacy-assurance"><span class="privacy-shield">◈</span> Hand tracking runs on this device. Video never leaves your computer.</p>
+                <p class="privacy-assurance"><span class="privacy-shield">◈</span> Camera frames stay on this device and are never uploaded. MediaPipe may send usage and performance metrics.</p>
               </div>
             </div>
           </div>
