@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#09110f" />
+    <meta name="description" content="Landmarks, the human body, engines and machines made of particles of light, controlled by your hand." />
+    <title>TakeApart — See what things are made of</title>
+    <link rel="icon" type="image/svg+xml" href="/takeapart-mark.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar">
+        <a class="brand" href="#top" aria-label="TakeApart home">
+          <img class="brand-mark" src="/takeapart-mark.svg" alt="" />
+          <span class="brand-name">take<span>apart</span></span>
+          <span class="brand-lab">/ FIELD NOTES 01</span>
+        </a>
+        <nav class="main-nav" aria-label="Main navigation">
+          <a class="nav-link" href="#gestures">Gestures <span class="nav-number">01</span></a>
+          <div class="model-menu-wrap">
+            <button id="models-menu-button" class="nav-link model-menu-button" type="button" aria-expanded="false" aria-haspopup="true">Models <span class="menu-chevron">⌄</span></button>
+            <div id="models-menu" class="model-menu" hidden>
+              <p class="menu-overline">CHOOSE A SPECIMEN</p>
+              <button type="button" data-model="turtle" class="model-option is-selected"><span class="model-option-index">01</span><span><b>Turtle Tower</b><small>Living geometry · 1:1</small></span><span class="option-dot"></span></button>
+              <button type="button" data-model="atlas" class="model-option"><span class="model-option-index">02</span><span><b>Human Atlas</b><small>Body systems · 1:1</small></span><span class="option-dot"></span></button>
+              <button type="button" data-model="engine" class="model-option"><span class="model-option-index">03</span><span><b>V8 Engine</b><small>Powertrain · 1:8</small></span><span class="option-dot"></span></button>
+            </div>
+          </div>
+        </nav>
+        <div class="topbar-right">
+          <span class="edition-mark"><span class="edition-dot"></span> INTERACTIVE ATLAS</span>
+          <button id="camera-top-button" class="camera-top-button" type="button"><span class="camera-icon">◉</span> <span>Use camera</span></button>
+        </div>
+      </header>
+
+      <main id="top">
+        <section class="stage" aria-label="Interactive particle model scene">
+          <canvas id="particle-scene" aria-label="A rotating 3D particle model of Turtle Tower. Drag to rotate it, or use the controls." role="img"></canvas>
+          <div class="scene-vignette" aria-hidden="true"></div>
+          <div class="stage-heading">
+            <p class="eyebrow"><span class="eyebrow-line"></span> SPECIMEN 001 <span class="eyebrow-slash">/</span> SPIN TO INSPECT</p>
+            <h1 id="stage-model-title">Turtle<br /><em>Tower</em></h1>
+            <p class="stage-subtitle" id="stage-model-subtitle">A quiet giant, held together<br />by light and a little patience.</p>
+          </div>
+          <div class="coordinate-stamp" aria-hidden="true"><span>37° 33′ 59.4″ N</span><span>126° 58′ 41.2″ E</span></div>
+          <div class="scene-meta"><span class="scene-meta-ring"></span><span>01</span><span class="meta-divider"></span><span id="scene-meta-type">LIVING GEOMETRY</span></div>
+
+          <aside class="details-panel" aria-label="Scene details and controls">
+            <div class="panel-heading">
+              <div><span class="panel-kicker">IN THE FIELD</span><h2>Details</h2></div>
+              <button id="details-toggle" class="icon-button" type="button" aria-label="Collapse details" aria-expanded="true"><span class="collapse-icon">−</span></button>
+            </div>
+            <div id="details-content" class="details-content">
+              <div class="status-list">
+                <div class="status-row"><span class="status-label">Scene</span><span class="status-value"><i class="status-indicator idle" id="scene-indicator"></i><span id="scene-status">Idle</span></span></div>
+                <div class="status-row"><span class="status-label">Hand</span><span class="status-value"><i class="status-indicator" id="hand-indicator"></i><span id="hand-status">No hand</span></span></div>
+                <div class="status-row"><span class="status-label">Mode</span><span class="status-value mode-value" id="mode-status">Manual</span></div>
+              </div>
+              <div class="panel-rule"></div>
+              <div class="sensitivity-label"><span>Gesture sensitivity</span><button class="text-button" id="sensitivity-button" type="button">Standard <span>⌄</span></button></div>
+              <p id="sensitivity-help" class="panel-helper">A little room for natural movement.</p>
+              <div class="panel-rule openness-rule"></div>
+              <div class="openness-head"><span>Hand openness</span><strong id="openness-value">0<span>%</span></strong></div>
+              <div class="openness-meter"><span id="openness-meter-fill"></span></div>
+              <p class="panel-helper">More forgiving helps recognize less distinct hand poses.</p>
+              <button class="panel-expandable" id="sensitivity-toggle" type="button" aria-expanded="false"><span>More forgiving</span><span class="small-arrow">↗</span></button>
+              <div class="privacy-mini"><span class="privacy-lock">⌑</span><span>Tracking stays on this device.<br />Video is never uploaded.</span></div>
+            </div>
+          </aside>
+
+          <div class="camera-preview" id="camera-preview" hidden>
+            <video id="camera-video" playsinline muted></video>
+            <span class="camera-live"><i></i> ON-DEVICE</span>
+            <button id="camera-close" type="button" aria-label="Turn off camera">×</button>
+          </div>
+
+          <div class="feature-note" id="feature-note" hidden>
+            <span class="feature-leader"></span>
+            <span class="feature-note-content"><small id="feature-category">SHELL / 01</small><strong id="feature-title">A map of old journeys</strong><span id="feature-copy">Each ridge is a record of growth.</span></span>
+          </div>
+
+          <div class="scene-controls" aria-label="Model controls">
+            <div class="control-hint"><span class="mouse-glyph">↔</span> Drag to orbit <i></i> Scroll to zoom</div>
+            <div class="control-dock">
+              <button class="dock-button" type="button" data-action="snap" aria-label="Snap particles into view"><span class="dock-icon snap-icon">✳</span><span>Snap</span></button>
+              <button class="dock-button is-active" type="button" data-action="form" aria-label="Form the model"><span class="dock-icon form-icon">◉</span><span>Form</span></button>
+              <button class="dock-button" type="button" data-action="release" aria-label="Release and separate the model"><span class="dock-icon release-icon">⠿</span><span>Release</span></button>
+              <span class="dock-separator"></span>
+              <button class="dock-button next-button" type="button" data-action="next" aria-label="Show the next model"><span class="dock-icon next-icon">↗</span><span>Next</span></button>
+            </div>
+          </div>
+
+          <div class="stage-bottom-left"><span class="scroll-mark">↓</span><span>SCROLL TO UNFOLD</span></div>
+          <div class="stage-bottom-right"><span class="stage-bottom-counter">01<span> / 03</span></span><span class="stage-bottom-line"></span></div>
+          <div id="toast" class="toast" aria-live="polite" role="status"></div>
+        </section>
+
+        <section class="welcome-section" id="welcome">
+          <div class="welcome-side"><p class="eyebrow"><span class="eyebrow-line"></span> A NEW WAY TO SEE</p><p class="welcome-index">01 <span>— THE IDEA</span></p></div>
+          <div class="welcome-main">
+            <h2>Welcome to<br /><em>TakeApart.</em></h2>
+            <div class="welcome-copy-row">
+              <p class="welcome-copy">Landmarks, the human body, engines and machines — made of particles of light, controlled by your hand.</p>
+              <div class="welcome-actions">
+                <button class="button button-primary" type="button" id="start-camera"><span class="button-icon">◉</span> Start with camera <span class="button-arrow">↗</span></button>
+                <button class="button button-quiet" type="button" id="continue-manual">Continue without camera <span class="button-arrow">→</span></button>
+                <p class="privacy-assurance"><span class="privacy-shield">◈</span> Hand tracking runs on this device. Video never leaves your computer.</p>
+              </div>
+            </div>
+          </div>
+          <div class="welcome-index welcome-index-right">A SMALL ATLAS<br /><span>OF BIG THINGS</span></div>
+        </section>
+
+        <section class="gesture-section" id="gestures">
+          <div class="gesture-heading">
+            <div><p class="eyebrow"><span class="eyebrow-line"></span> FOUR MOVEMENTS, ENDLESS DETAILS</p><h2>Let your hands<br /><em>do the looking.</em></h2></div>
+            <p class="gesture-intro">No menus between you and the model.<br />Just a few simple gestures to begin.</p>
+          </div>
+          <div class="gesture-list">
+            <article class="gesture-item"><span class="gesture-number">01</span><span class="gesture-illustration" aria-hidden="true"><span class="gesture-emoji">🫰</span><i class="gesture-spark spark-a"></i><i class="gesture-spark spark-b"></i><i class="gesture-spark spark-c"></i></span><div class="gesture-text"><h3>Snap to summon</h3><p>Bring the particles into view. Make a fist to form the model.</p></div><span class="gesture-key">FORM</span></article>
+            <article class="gesture-item"><span class="gesture-number">02</span><span class="gesture-illustration" aria-hidden="true"><span class="gesture-emoji">✋</span><i class="gesture-wave wave-a"></i><i class="gesture-wave wave-b"></i></span><div class="gesture-text"><h3>Open to explore</h3><p>Open your hand to release every named part into the space around it.</p></div><span class="gesture-key">RELEASE</span></article>
+            <article class="gesture-item"><span class="gesture-number">03</span><span class="gesture-illustration" aria-hidden="true"><span class="gesture-emoji">☝️</span><i class="gesture-target"></i></span><div class="gesture-text"><h3>Point to learn</h3><p>Point at a detail to find out what it does. Pinch to pull it into focus.</p></div><span class="gesture-key">INSPECT</span></article>
+            <article class="gesture-item"><span class="gesture-number">04</span><span class="gesture-illustration" aria-hidden="true"><span class="gesture-emoji">🙌</span><i class="gesture-rotate"></i></span><div class="gesture-text"><h3>Twist, tilt &amp; zoom</h3><p>Turn one hand to rotate the model. Use two hands to zoom. Show ✌ for next.</p></div><span class="gesture-key">MOVE</span></article>
+          </div>
+          <div class="gesture-footer"><span>THE ONLY INTERFACE IS YOUR CURIOSITY.</span><a href="#top">Back to the model <span>↑</span></a></div>
+        </section>
+
+        <footer class="site-footer"><a class="brand footer-brand" href="#top"><img class="brand-mark" src="/takeapart-mark.svg" alt="" /><span class="brand-name">take<span>apart</span></span></a><span>MADE OF LIGHT. MADE TO BE OPENED.</span><span>© TAKEAPART 2025</span></footer>
+      </main>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

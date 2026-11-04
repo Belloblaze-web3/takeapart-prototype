@@ -1,0 +1,7 @@
+# TODO
+
+- [x] **Immersive model explorer and controls.** Provide a dark, immersive interactive 3D scene with Turtle Tower selected initially and a particle-of-light visual treatment. Support rotating, tilting, zooming, separating, and reforming the displayed anatomy or machine model. Provide a compact scene control panel showing current scene/model status, camera and hand-detection status, gesture sensitivity, and hand-openness feedback. Include usable Snap, Form, Release, and Next controls with polished visual states and immediate scene feedback.
+
+- [x] **Camera mode, gesture guidance, and privacy.** Offer optional browser-based camera mode with live gesture input and on-device hand tracking, alongside a no-camera manual mode. Include permission handling and a graceful fallback when camera access is denied or unavailable. Prominently assure users that hand tracking runs on-device and camera video never leaves the user's computer. Explain the gestures: snap to summon, open to explore, point to learn, and twist, tilt, or zoom to manipulate models.
+
+- [x] **Welcome and navigation.** Provide Gestures and Models navigation for moving between the gesture guide and available model-exploration experience. Include “Welcome to TakeApart” and its introduction describing landmarks, the human body, engines, and machines as particles of light controlled by hand. Offer entry choices labeled “Start with camera” and “Continue without camera.”
