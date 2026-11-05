@@ -2,6 +2,8 @@ const canvas = document.querySelector('#particle-scene');
 const ctx = canvas.getContext('2d', { alpha: false });
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
+import { initAssistant } from './assistant.js';
+const assistant = initAssistant();
 
 const models = [
   { id: 'turtle', title: 'Turtle Tower', lines: ['Turtle', 'Tower'], subtitle: 'A quiet giant, held together\nby light and a little patience.', type: 'LIVING GEOMETRY', accent: [198, 239, 128], index: '01', scale: 1, feature: 'A map of old journeys' },
@@ -252,6 +254,7 @@ function updateModel() {
   $('#feature-title').textContent = model.feature;
   $('#feature-category').textContent = `${model.type.split(' ')[0]} / ${model.index}`;
   $('#feature-copy').textContent = model.id === 'turtle' ? 'Each ridge records a different season.' : model.id === 'atlas' ? 'Structure meets movement, in miniature.' : 'Eight small chambers share one pulse.';
+  assistant.setModel(model.id, model.title, model.type);
   targetSeparation = 0;
   $('#scene-status').textContent = 'Idle';
   setActiveAction('form');

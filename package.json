@@ -1,13 +1,19 @@
 {
-  "name": "takeapart-prototype",
-  "version": "1.0.0",
+  "name": "meta-anatomy-research-lab",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
+  "description": "Meta Muse Spark-powered educational anatomy and engineering model explorer",
   "packageManager": "pnpm@11.25.0",
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 3000",
     "build": "vite build",
-    "preview": "vite preview --host 0.0.0.0 --port 3000"
+    "preview": "vite preview --host 0.0.0.0 --port 3000",
+    "start": "node server/index.js",
+    "test": "node --test server/api.test.js"
   },
   "devDependencies": {
     "vite": "^7.1.12"
